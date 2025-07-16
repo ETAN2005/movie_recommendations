@@ -8,19 +8,36 @@
     </head>
     <body style="background-color:beige;">
         <h1>Movie Recommendations</h1>
-	<hr style="width:25%;text-align:left;margin-left:0;">
+	<hr style="height:2px;border-width:1px;margin-left:0;">
         <form action="/submit" method="POST">
             <label for="user_movie">Movie:</label>
             <input type="text" name="user_movie" placeholder="Enter a movie">
             <button type="submit">Submit</button>
             {% if movie %}
-                <h2>Recommendations for "{{ movie }}":</h2>
-                    <ul>
-                        {% for rec in recommended %}
-                            <li>{{ rec }}</li>
-                        {% endfor %}
-                    </ul>
+                {% if found > 0 %}
+                    <h2>Recommendations for '{{ movie }}':</h2>
+                {% endif %}
+                        <ul style="list-style-type: none;">
+                            {% for rec in recommended %}
+                                <li style="list-style-type: none;">{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
             {% endif %}
+        </form>
+        <form action="/history" method="GET">
+            <button type="submit">View History</button>
+            {% if history %}
+                <h2>History</h2>
+                <ul style="list-style-type: none;">
+                    {% for hist in history %}
+                        <li style="list-style-type: none;">{{ hist }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </form>
+        <form action="/delete_history" method="POST">
+            <button type="submit">Clear History</button>
+
         </form>
         
     </body>
