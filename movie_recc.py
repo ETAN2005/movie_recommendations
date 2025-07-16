@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from flask import Flask, redirect, request, render_template, session
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process 
-#import requests
+import requests
 
 #variables being used 
 cv = TfidfVectorizer() #CountVectorizer()
@@ -71,6 +71,20 @@ def add_to_history(title):
         session['history'] = []
     session['history'].append(title)
 
+def get_movie_poster(title):
+    api_key = '4aeebfc8a7f0cf841fd70b3f9288c5db'
+    url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={title}"
+    response = requests.get(url).json()
+    results = response.get('results')
+    if not results: 
+        return ""
+    
+    poster_path = results[0].get('results')
+    if not poster_path: 
+        return ""
+    full_poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+    return full_poster_url
+
 #getting input from user in (back-end)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -102,7 +116,11 @@ def submit_form():
                 recommended.remove(title_match[0])
             
             recommendation_cache[user_movie_copy] = recommended
-            return render_template('index.html', movie=user_movie, recommended=recommended,found=1)
+            posters=[]
+            for movie in recommended: 
+                poster_url = get_movie_poster(movie)
+                posters.append((movie, poster_url))
+            return render_template('index.html', movie=user_movie, recommended=posters,found=1)
 
 @app.route('/history', methods=['GET'])
 def history():
