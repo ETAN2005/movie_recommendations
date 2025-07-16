@@ -18,8 +18,15 @@
                     <h2>Recommendations for '{{ movie }}':</h2>
                 {% endif %}
                         <ul style="list-style-type: none;">
-                            {% for rec in recommended %}
-                                <li style="list-style-type: none;">{{ rec }}</li>
+                            {% for title,poster in recommended %}
+                                <<li style="list-style-type: none;">
+                                    <p>{{ title|safe }}</p>
+                                    {% if poster %}
+                                        <img src="{{ poster }}" alt="Poster for {{ title }}" style="width:150px;">
+                                    {% else %}
+                                        <p>No image available</p>
+                                    {% endif %}
+                                </li>>
                             {% endfor %}
                         </ul>
             {% endif %}
@@ -34,11 +41,12 @@
                     {% endfor %}
                 </ul>
             {% endif %}
-        </form>
-        <form action="/delete_history" method="POST">
-            <button type="submit">Clear History</button>
+            <form action="/delete_history" method="POST">
+                <button type="submit">Clear History</button>
 
+            </form>
         </form>
+        
         
     </body>
 </html>

@@ -1,6 +1,5 @@
 import os
 import pandas as pd 
-import numpy as np 
 #from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -15,9 +14,9 @@ movie_data = pd.read_csv('movie.csv')
 
 recommendation_cache = {} # a dictionary
 #processing 
-movie_features = movie_data[['keywords','cast','genres','director', 'tagline']]
+movie_features = ['keywords','cast','genres','director', 'tagline']
 #merging into one column 
-movie_data['combined'] = movie_data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
+movie_data['combined'] = movie_data[movie_features].fillna('').agg(' '.join, axis=1)
 
 #get the count and cosine sim
 matrix = cv.fit_transform(movie_data['combined'])
@@ -69,7 +68,8 @@ def find_movie(title):
 def add_to_history(title):
     if 'history' not in session:
         session['history'] = []
-    session['history'].append(title)
+    if title not in session['history']:
+        session['history'].append(title)
 
 def get_movie_poster(title):
     api_key = '4aeebfc8a7f0cf841fd70b3f9288c5db'
@@ -79,7 +79,7 @@ def get_movie_poster(title):
     if not results: 
         return ""
     
-    poster_path = results[0].get('results')
+    poster_path = results[0].get('poster_path')
     if not poster_path: 
         return ""
     full_poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
@@ -100,11 +100,11 @@ def submit_form():
     
     
     if user_movie_copy in recommendation_cache:
-        recommended = recommendation_cache[user_movie_copy]
-        return render_template('index.html', movie=user_movie, recommended=recommended,found=1)
+        posters = recommendation_cache[user_movie_copy]
+        return render_template('index.html', movie=user_movie, recommended=posters,found=1)
     else:
         title_match = find_movie(user_movie_copy)
-        if title_match==None or title_match[1]<75:
+        if title_match is None or title_match[1]<75:
             return render_template('index.html', movie=user_movie, recommended=["Movie not found."],found=0)
         else:
             add_to_history(user_movie)
@@ -115,11 +115,12 @@ def submit_form():
             if title_match[0] in recommended:
                 recommended.remove(title_match[0])
             
-            recommendation_cache[user_movie_copy] = recommended
             posters=[]
             for movie in recommended: 
                 poster_url = get_movie_poster(movie)
                 posters.append((movie, poster_url))
+            
+            recommendation_cache[user_movie_copy] = posters
             return render_template('index.html', movie=user_movie, recommended=posters,found=1)
 
 @app.route('/history', methods=['GET'])
