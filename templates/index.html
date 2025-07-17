@@ -19,14 +19,14 @@
                 {% endif %}
                         <ul style="list-style-type: none;">
                             {% for title,poster in recommended %}
-                                <<li style="list-style-type: none;">
+                                <li style="list-style-type: none;">
                                     <p>{{ title|safe }}</p>
                                     {% if poster %}
                                         <img src="{{ poster }}" alt="Poster for {{ title }}" style="width:150px;">
                                     {% else %}
                                         <p>No image available</p>
                                     {% endif %}
-                                </li>>
+                                </li>
                             {% endfor %}
                         </ul>
             {% endif %}
