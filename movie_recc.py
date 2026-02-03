@@ -1,7 +1,8 @@
+import datetime
 import os
 import pandas as pd 
 import numpy as np 
-from datetime import datetime
+#from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
@@ -11,60 +12,18 @@ from fuzzywuzzy import process
 import requests
 
 #variables being used 
-try:
-    movie_data = pd.read_csv('movie.csv')
-    print(f"✓ Loaded {len(movie_data)} movies from movie.csv")
-except FileNotFoundError:
-    print("✗ Error: movie.csv not found. Make sure it's in the same directory as movie_recc.py")
-    exit(1)
-except Exception as e:
-    print(f"✗ Error loading movie.csv: {e}")
-    exit(1)
+cv = TfidfVectorizer() #CountVectorizer()
+movie_data = pd.read_csv('movie.csv')
 
-# Data preprocessing
-movie_data['release_date'] = pd.to_datetime(movie_data['release_date'], errors='coerce')
-movie_data['year'] = movie_data['release_date'].dt.year
-movie_data['runtime'] = pd.to_numeric(movie_data['runtime'], errors='coerce').fillna(movie_data['runtime'].median())
+recommendation_cache = {} # a dictionary
+#processing 
+movie_features = movie_data[['keywords','cast','genres','director', 'tagline']]
+#merging into one column 
+movie_data['combined'] = movie_data.apply(lambda row: ' '.join(row.astype(str)), axis=1)
 
-# Fill missing values to prevent vectorizer issues
-movie_data['genres'] = movie_data['genres'].fillna('')
-movie_data['keywords'] = movie_data['keywords'].fillna('')
-movie_data['cast'] = movie_data['cast'].fillna('')
-movie_data['director'] = movie_data['director'].fillna('')
-
-recommendation_cache = {} 
-
-# Create weighted feature matrix for better similarity matching
-# Separate vectorizers for different features
-try:
-    print("Building similarity matrices...")
-    genre_vec = TfidfVectorizer(max_features=100, analyzer='char', ngram_range=(2,2))
-    keyword_vec = TfidfVectorizer(max_features=100)
-    cast_vec = TfidfVectorizer(max_features=50, analyzer='char', ngram_range=(2,2))
-    director_vec = TfidfVectorizer(max_features=50, analyzer='char', ngram_range=(2,2))
-
-    # Fit vectorizers
-    genre_matrix = genre_vec.fit_transform(movie_data['genres'])
-    keyword_matrix = keyword_vec.fit_transform(movie_data['keywords'])
-    cast_matrix = cast_vec.fit_transform(movie_data['cast'])
-    director_matrix = director_vec.fit_transform(movie_data['director'])
-
-    # Calculate individual similarities (40% genres, 30% keywords, 20% cast, 10% director)
-    genre_similarity = cosine_similarity(genre_matrix)
-    keyword_similarity = cosine_similarity(keyword_matrix)
-    cast_similarity = cosine_similarity(cast_matrix)
-    director_similarity = cosine_similarity(director_matrix)
-
-    # Weighted combined similarity
-    similarity = (0.4 * genre_similarity + 
-                  0.3 * keyword_similarity + 
-                  0.2 * cast_similarity + 
-                  0.1 * director_similarity)
-    
-    print("✓ Similarity matrices built successfully")
-except Exception as e:
-    print(f"✗ Error building similarity matrices: {e}")
-    exit(1)
+#get the count and cosine sim
+matrix = cv.fit_transform(movie_data['combined'])
+similarity = cosine_similarity(matrix)
 
 
 #functions for processing
@@ -139,29 +98,35 @@ def find_movie(title):
 def add_to_history(title):
     if 'history' not in session:
         session['history'] = []
-    session['history'].append(title)
+    if title not in session['history']:
+        session['history'].append(title)
 
 def get_movie_poster(title):
     api_key = '4aeebfc8a7f0cf841fd70b3f9288c5db'
     url = f"https://api.themoviedb.org/3/search/movie?api_key={api_key}&query={title}"
-    try:
-        response = requests.get(url, timeout=5).json()
-        results = response.get('results')
-        if not results: 
-            return ""
-        
-        poster_path = results[0].get('poster_path')
-        if not poster_path: 
-            return ""
-        full_poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
-        return full_poster_url
-    except Exception as e:
-        print(f"Error fetching poster for {title}: {e}")
+    response = requests.get(url).json()
+    results = response.get('results')
+    if not results: 
         return ""
+    
+    poster_path = results[0].get('results')
+    if not poster_path: 
+        return ""
+    full_poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+    return full_poster_url
 
 #getting input from user in (back-end)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Disable caching for static files during development
+@app.after_request
+def set_cache_headers(response):
+    response.cache_control.max_age = 0
+    response.cache_control.no_cache = True
+    response.cache_control.no_store = True
+    response.cache_control.must_revalidate = True
+    return response
 
 @app.route('/')
 def index():
@@ -174,11 +139,11 @@ def submit_form():
     
     
     if user_movie_copy in recommendation_cache:
-        recommended = recommendation_cache[user_movie_copy]
-        return render_template('index.html', movie=user_movie, recommended=recommended,found=1)
+        posters = recommendation_cache[user_movie_copy]
+        return render_template('index.html', movie=user_movie, recommended=posters,found=1)
     else:
         title_match = find_movie(user_movie_copy)
-        if title_match==None or title_match[1]<75:
+        if title_match is None or title_match[1]<75:
             return render_template('index.html', movie=user_movie, recommended=["Movie not found."],found=0)
         else:
             add_to_history(user_movie)
@@ -189,11 +154,12 @@ def submit_form():
             if title_match[0] in recommended:
                 recommended.remove(title_match[0])
             
-            recommendation_cache[user_movie_copy] = recommended
             posters=[]
             for movie in recommended: 
                 poster_url = get_movie_poster(movie)
                 posters.append((movie, poster_url))
+            
+            recommendation_cache[user_movie_copy] = posters
             return render_template('index.html', movie=user_movie, recommended=posters,found=1)
 
 @app.route('/history', methods=['GET'])
