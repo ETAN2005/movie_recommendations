@@ -1,8 +1,7 @@
-import datetime
+from datetime import date
 import os
 import pandas as pd 
 import numpy as np 
-#from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
@@ -53,7 +52,7 @@ def get_recommended(movie_index):
     movie_data_copy['quality_score'] = movie_data_copy.apply(weighted_rating, axis=1)
     
     # 2. Calculate recency score (normalized by year difference)
-    current_year = datetime.now().year
+    current_year = date.today().year
     selected_movie_year = movie_data_copy.loc[movie_index, 'year']
     movie_data_copy['year_diff'] = abs(movie_data_copy['year'] - selected_movie_year)
     movie_data_copy['recency_score'] = 1 - (movie_data_copy['year_diff'] / (current_year - 1900))

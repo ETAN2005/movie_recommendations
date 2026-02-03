@@ -25,7 +25,8 @@ h1::before{
 }
 */
 h1{
-    font-family: 'BebasNeueRegular', sans-serif; 
+    font-family: 'BebasNeueRegular', sans-serif;
+    color: rgb(234, 37, 37); 
     /*
     height: 15rem;
     width: 3rem; 
@@ -58,6 +59,7 @@ hr{
 
 }
 label{
+    color: whitesmoke;
     font-family:monospace;
     font-size: 25px;
 }
@@ -67,11 +69,14 @@ form{
     font-size:25px;
 }
 h2{
+    color: rgb(234, 37, 37); 
     font-family: monospace; 
     margin:2em;
     text-align: center;
 }
 input[type="text"]{
+    color: rgb(190, 173, 173);
+    background-color: #655a57;
     font-family: monospace;
     font-size: 25px;
 
@@ -84,12 +89,15 @@ input::placeholder{
 }
 li{
     font-family: monospace;
+    color: whitesmoke;
+    font-size: 22px;
 }
 button{
     font-family: monospace;
     font-size: 25px;
     border-radius: 8px;
-    background-color: #fff;
+    background-color: #2d2827;
+    color: whitesmoke;
     border: 2px solid #555;
     transition-duration: 0.4s;
     cursor: pointer; 

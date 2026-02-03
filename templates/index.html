@@ -6,7 +6,7 @@
         <title>Movie Recommendation</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     </head>
-    <body style="background-color:beige;">
+    <body style="background-color:#2d2827;">
         <h1>Movie Recommendations</h1>
 	<hr style="height:2px;border-width:1px;margin-left:0;">
         <form action="/submit" method="POST">
@@ -16,21 +16,12 @@
             {% if movie %}
                 {% if found > 0 %}
                     <h2>Recommendations for '{{ movie }}':</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; margin-top: 20px;">
-                        {% for rec in recommended %}
-                            <div style="text-align: center;">
-                                {% if rec[1] %}
-                                    <img src="{{ rec[1] }}" alt="{{ rec[0] }}" style="width: 150px; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                                {% else %}
-                                    <div style="width: 150px; height: 225px; background-color: #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center;">No Image</div>
-                                {% endif %}
-                                <p style="font-weight: bold; margin-top: 10px; font-size: 14px;">{{ rec[0] }}</p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <h2 style="color: red;">{{ recommended[0] }}</h2>
                 {% endif %}
+                        <ul style="list-style-type: none;">
+                            {% for rec in recommended %}
+                                <li style="list-style-type: none;">{{ rec }}</li>
+                            {% endfor %}
+                        </ul>
             {% endif %}
         </form>
         <form action="/history" method="GET">
