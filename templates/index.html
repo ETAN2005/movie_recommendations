@@ -17,9 +17,21 @@
                 {% if found > 0 %}
                     <h2>Recommendations for '{{ movie }}':</h2>
                 {% endif %}
-                        <ul style="list-style-type: none;">
+                        <ul style="list-style-type: none; display:flex; gap:16px; flex-wrap:wrap; padding:0;">
                             {% for rec in recommended %}
-                                <li style="list-style-type: none;">{{ rec }}</li>
+                                {% if rec is string %}
+                                    <li style="list-style-type: none;">{{ rec }}</li>
+                                {% else %}
+                                    {# rec is expected to be (title, poster_url) #}
+                                    <li style="list-style-type: none; text-align:center; width:140px;">
+                                        <div style="font-weight:600; margin-bottom:6px;">{{ rec[0] }}</div>
+                                        {% if rec[1] %}
+                                            <img src="{{ rec[1] }}" alt="{{ rec[0] }} poster" style="width:120px; height:auto; border-radius:6px;" />
+                                        {% else %}
+                                            <div style="font-size:0.9rem; color:#ccc;">No poster available</div>
+                                        {% endif %}
+                                    </li>
+                                {% endif %}
                             {% endfor %}
                         </ul>
             {% endif %}
